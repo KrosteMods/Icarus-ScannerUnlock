@@ -77,6 +77,19 @@ der Befund im Spiel, gehört dieser Absatz umgeschrieben.
   Tabellen ändern sich; eine alte Zeile überschreibt sonst eine neuere.
 - **Der Referenzordner kommt nicht ins Repo** (`.gitignore`): er ist aus dem
   Spiel erzeugt.
+- **Der Merged-Pak trägt GANZE Tabellen, nicht einzelne Zeilen.** Nachgemessen
+  beim Einbau am 04.10.2026: der Pak wuchs beim Hinzufügen dieser Mod um
+  **19.354 Byte**, die vollständige 26-zeilige `D_OreDeposit` ist kompakt
+  **19.230 Byte** groß — Verhältnis 1,01. Das ist die wichtige Zusicherung:
+  hätte lmm nur unsere eine Zeile hineingeschrieben, würde der Pak die Tabelle
+  ersetzen und die anderen 25 Vorkommen aus dem Spiel nehmen. Diese Rechnung
+  gehört nach jedem Umbau der Merge-Kette wiederholt; ein Blick auf
+  `strings | grep -c` genügt **nicht**, der Inhalt liegt komprimiert und zählt
+  immer nur einmal.
+- Daraus folgt direkt die Regel aus der README: **nach jedem Icarus-Update neu
+  bauen** (`lmm verify --game icarus --fix`). Eine alte gemergte Tabelle setzt
+  sonst alle 26 Vorkommen auf den Stand des vorigen Patches zurück, nicht nur
+  unsere Zeile.
 
 ## Grenzen, die in der README stehen und keine Fehler sind
 
