@@ -6,12 +6,69 @@ ein Feld, das in der Spielzeile steht und in unserer fehlt — dann setzt die
 Mod es auf den Tabellen-Default zurueck, und im Spiel verschwindet ein
 Knotenmaterial oder eine Abbauzeit. Deshalb wird Feld fuer Feld verglichen.
 
+Dazu die Namenskette: ein freigeschaltetes Vorkommen braucht einen anzeigbaren
+Namen, sonst steht im Scanner eine LEERE Zeile. Am 04.10.2026 im Spiel von
+Lars gemeldet, Ursache war ein Loch in den Spieldaten: D_ItemTemplate.
+Cobalt_Ore zeigt auf eine Zeile Cobalt_Ore in D_ItemsStatic, die es nicht
+gibt. Seitdem wird die Kette hier geprueft, nicht im Spiel.
+
     python3 tools/pruefe-zeilen.py <ordner-mit-spieltabellen>
 """
 import json, pathlib, sys
 
 FELD = "ScannerBlacklist"
 WURZEL = pathlib.Path(__file__).resolve().parent.parent
+
+
+def lade(ref, tabelle):
+    """Eine Spieltabelle als {Zeilenname: Zeile}, oder None."""
+    treffer = list(ref.glob(f"*-{tabelle}.json")) + list(ref.glob(f"{tabelle}.json"))
+    if not treffer:
+        return None
+    d = json.loads(treffer[0].read_text(encoding="utf-8"))
+    return {r["Name"]: r for r in d["Rows"]}
+
+
+def namenskette(ref, zeile):
+    """Vom Vorkommen zum Anzeigenamen. Gibt (name, fehler) zurueck.
+
+    Der Scanner braucht beides: die Hervorhebung benennt das Vorkommen, der
+    Gegenstand benennt, was herauskommt. Reisst die Kette, bleibt das Feld im
+    Scanner leer — ohne Fehlermeldung im Spiel.
+    """
+    fehler = []
+    name = zeile["Name"]
+
+    hl = lade(ref, "D_Highlightable")
+    hr = (zeile.get("HighlightableRow") or {}).get("RowName")
+    if not hr or hr == "None":
+        fehler.append(f"{name}: keine HighlightableRow — der Scanner hat nichts zu benennen")
+    elif hl is not None and not (hl.get(hr) or {}).get("DisplayName"):
+        fehler.append(f"{name}: Hervorhebung '{hr}' hat keinen DisplayName")
+
+    tmpl = lade(ref, "D_ItemTemplate")
+    stat = lade(ref, "D_ItemsStatic")
+    item = lade(ref, "D_Itemable")
+    rt = (zeile.get("ResourceType") or {}).get("RowName")
+    if not rt or rt == "None":
+        fehler.append(f"{name}: kein ResourceType")
+        return name, fehler
+    if tmpl is None or stat is None or item is None:
+        return name, fehler
+    if rt not in tmpl:
+        fehler.append(f"{name}: ResourceType '{rt}' gibt es in D_ItemTemplate nicht")
+        return name, fehler
+    sr = (tmpl[rt].get("ItemStaticData") or {}).get("RowName")
+    if not sr or sr not in stat:
+        fehler.append(f"{name}: D_ItemTemplate.{rt} zeigt auf '{sr}' in D_ItemsStatic — "
+                      f"die Zeile gibt es nicht. Unfertiger Spielinhalt; im Scanner "
+                      f"bleibt das Feld leer")
+        return name, fehler
+    ir = (stat[sr].get("Itemable") or {}).get("RowName")
+    if not ir or ir not in item or not item[ir].get("DisplayName"):
+        fehler.append(f"{name}: D_ItemsStatic.{sr} hat keinen anzeigbaren Namen "
+                      f"(Itemable '{ir}')")
+    return name, fehler
 
 
 def main():
@@ -95,6 +152,21 @@ def main():
                     if rn not in {r["Name"] for r in ziel["Rows"]}:
                         print(f"FEHLER: {name}.{f}: '{rn}' gibt es in {zt} nicht")
                         fehler += 1
+
+    # Namenskette je freigeschaltetem Vorkommen.
+    print()
+    for tabelle, zeilen in unser.items():
+        if tabelle.startswith("_"):
+            continue
+        for zeile in zeilen:
+            name, kaputt = namenskette(ref, zeile)
+            if kaputt:
+                for k in kaputt:
+                    print(f"FEHLER: {k}")
+                fehler += len(kaputt)
+            else:
+                print(f"ok    {name}: Namenskette vollstaendig "
+                      f"(Hervorhebung + Gegenstand haben einen Namen)")
 
     print(f"\n{fehler} Fehler, {warnungen} Warnungen")
     return 1 if fehler else 0

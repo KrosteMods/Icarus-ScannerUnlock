@@ -4,9 +4,9 @@ Hinweise für Claude Code (claude.ai/code) bei Arbeit an diesem Repo.
 
 ## Grundlagen
 
-- **Was:** Datentabellen-Mod für Icarus, die Rubin-, Lithium- und
-  Cobalt-Vorkommen vom Erz-Scanner anzeigen lässt. Kein neues Item, kein
-  Skript, kein UE4SS — ein Feld in drei Spielzeilen.
+- **Was:** Datentabellen-Mod für Icarus, die Rubin- und Lithium-Vorkommen vom
+  Erz-Scanner anzeigen lässt. Kein neues Item, kein Skript, kein UE4SS — ein
+  Feld in zwei Spielzeilen.
 - **Repo:** `github.com/KrosteMods/Icarus-ScannerUnlock`. Mods gehören in die
   KrosteMods-Org, nicht nach KroModIx.
 - **Auslieferung:** `.EXMODZ` als Release-Datei. Das ist ein ZIP mit
@@ -75,6 +75,36 @@ Nebenbei aufgefallen: `Deep_Mining_Ore_Deposit_Lead` und `_Abyssal_Oxite`
 existieren als Hervorhebung, ohne dass es ein passendes Vorkommen gibt — Reste,
 für diese Mod ohne Bedeutung.
 
+### Cobalt musste wieder raus, und warum die Messung es nicht sah (v0.3.0)
+
+Lars im Spiel: „beim scanner zeigt lithium und rubin an aber ein feld danach
+bleibt leer." Das leere Feld war Cobalt.
+
+Cobalt sieht fertig aus und ist es nicht. `D_OreDeposit` hat die Zeile,
+`D_Highlightable` hat „Deep Mining Ore Deposit: Cobalt", `D_Itemable` hat sogar
+`Item_Cobalt_Ore` mit dem Namen „Cobalt Ore". Die Kette reisst in der Mitte:
+**`D_ItemTemplate.Cobalt_Ore` zeigt auf eine Zeile `Cobalt_Ore` in
+`D_ItemsStatic`, die es nicht gibt.** Kein Gegenstand, kein Name, leeres Feld.
+Dazu: kein einziges Rezept im Spiel benutzt Cobalt, und als Ader kommt es in
+**keiner** der 60 Regionen vor. Es gibt es nur als Felsbrocken-Belohnung
+(`D_BreakableRockData.Cobalt`, Vorschlaghammer) — und auch die endet an
+derselben fehlenden Zeile.
+
+**Warum meine Messung in v0.2.0 das durchliess:** ich habe geprüft, ob die
+Hervorhebung existiert, und daraus geschlossen, das Vorkommen sei
+„durchgehend vorbereitet". Die Hervorhebung benennt aber nur den **Knoten**.
+Was herauskommt, benennt der **Gegenstand** über `ResourceType`, und diesen
+zweiten Strang habe ich gar nicht verfolgt. Eine Teilkette geprüft und das
+Ergebnis als ganze Kette gelesen.
+
+`tools/pruefe-zeilen.py` läuft jetzt **beide** Stränge ab: Vorkommen →
+`HighlightableRow` → DisplayName, und Vorkommen → `ResourceType` →
+`D_ItemTemplate` → `D_ItemsStatic` → `Itemable` → DisplayName. Gegengeprüft:
+mit Cobalt wird die Prüfung rot, und sie erwischt ebenso alle vier Exoten
+(„keine HighlightableRow") samt `Random` („kein ResourceType"). Damit sind
+sämtliche Ausschlussentscheidungen dieses Repos maschinell nachvollziehbar
+statt handverlesen.
+
 ### Die beiden Scanner des Spiels
 
 - **Deep Mining Ore Scanner** (`Scanner_DeepOre`): Rezept `Deep_Ore_Scanner` an
@@ -101,9 +131,12 @@ der Befund im Spiel, gehört dieser Absatz umgeschrieben.
   Tabellen-Default zurück — dann fehlt im Spiel ein Knotenmaterial, ohne
   Fehlermeldung. `tools/erzeuge-zeilen.py` liest die echte Zeile und ändert
   genau ein Feld.
-- **`pruefe-zeilen.py` prüft vier Dinge**, und jedes davon ist ein real
+- **`pruefe-zeilen.py` prüft fünf Dinge**, und jedes davon ist ein real
   möglicher Fehler: erfundene Feldnamen, fehlende Felder aus der Spielzeile,
-  mehr als die eine gewollte Abweichung, und unauflösbare Verweise.
+  mehr als die eine gewollte Abweichung, unauflösbare Verweise, und die
+  **vollständige Namenskette** in beide Richtungen (Knoten *und* Gegenstand).
+  Fehlt ein Name, steht im Scanner eine leere Zeile — ohne Fehlermeldung im
+  Spiel.
   **Zwei Löcher hatte der erste Entwurf**, beide durch Gegenprobe gefunden:
   (1) Verweise wurden übersprungen, weil in den Spielzeilen nur `RowName`
   steht und der Tabellenname aus `Defaults` kommt — die Schleife prüfte nichts
@@ -111,7 +144,8 @@ der Befund im Spiel, gehört dieser Absatz umgeschrieben.
   aber in `Defaults` gibt, rutschte durch, weil die Namensprüfung
   Default-Felder erlaubt. Nach jeder Änderung am Prüfer wieder gegenprüfen:
   Feld erfinden, Feld löschen, Verweis verbiegen, Default-Feld zusätzlich
-  setzen — alle vier müssen rot werden.
+  setzen — alle vier müssen rot werden. Für die Namenskette: `Cobalt` oder
+  `Exotic_Raw_Uranium` erzeugen, beide müssen rot werden.
 - **Nach einem Icarus-Update erst erzeugen, dann prüfen, dann bauen.** Die
   Tabellen ändern sich; eine alte Zeile überschreibt sonst eine neuere.
 - **Der Referenzordner kommt nicht ins Repo** (`.gitignore`): er ist aus dem

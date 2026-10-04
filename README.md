@@ -1,7 +1,7 @@
 # Ore Scanner Unlock — an Icarus mod
 
-Makes **ruby**, **lithium** and **cobalt** deposits show up on the ore scanner
-you already craft.
+Makes **ruby** and **lithium** deposits show up on the ore scanner you already
+craft.
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/kroste)
 
@@ -9,11 +9,11 @@ No new items, no scripts, no UE4SS. One field in one game row.
 
 ## How it works
 
-Ruby, lithium and cobalt are already complete deep mining ore deposits in
-Icarus. `D_OreDeposit` has a row for each, with its own node materials, its own
-mining time and its own highlight — the game even ships the labels **"Deep
-Mining Ore Deposit: Ruby"**, **"… Lithium"** and **"… Cobalt"**. The only thing
-hiding them from the scanner is one field in those rows:
+Ruby and lithium are already complete deep mining ore deposits in Icarus.
+`D_OreDeposit` has a row for each, with its own node materials, its own mining
+time and its own highlight — the game even ships the labels **"Deep Mining Ore
+Deposit: Ruby"** and **"… Lithium"**. The only thing hiding them from the
+scanner is one field in those rows:
 
 ```json
 "ScannerBlacklist": true
@@ -26,23 +26,40 @@ coal, sulfur, aluminium, titanium, platinum, clay, scoria, obsidian, oxite,
 salt, stone, limestone, frozen wood, supercooled ice — do not, and the scanner
 shows every one of them.
 
-This mod sets that one field to `false` for the three. Nothing else changes:
-each row is read out of the game's own table field by field, so node materials,
+This mod sets that one field to `false` for both. Nothing else changes: each
+row is read out of the game's own table field by field, so node materials,
 mining time and highlight stay exactly as the game has them.
 
-### Why only three of the eight
+### Why only two of the eight
 
-The scanner names a deposit through its `HighlightableRow`. Measured against
-`D_Highlightable`: exactly **four** of the eight blacklisted rows have no
-highlight of their own — `Random`, `Exotic`, `Exotic_Red_Raw` and
-`Exotic_Raw_Uranium`. Without one there is nothing for the scanner to label, so
-lifting their flag is not expected to achieve anything. On top of that,
-`Exotic` is marked `bIsDeprecated` in the game data, `Random` is a template
-rather than a real deposit, and the mission deposit has its own purpose-built
-device. Ruby, lithium and cobalt are prepared end to end and only blacklisted —
-those are the three worth unlocking.
+A deposit needs a name at both ends: the `HighlightableRow` names the node, and
+the `ResourceType` names what comes out of it. If either is missing the scanner
+shows a **blank entry**. Measured against the game's tables, six of the eight
+blacklisted deposits fail that:
+
+| Deposit | Why it is left out |
+|---|---|
+| `Exotic_Red_Raw`, `Exotic_Raw_Uranium` | no `HighlightableRow` at all |
+| `Exotic` | no highlight, and marked `bIsDeprecated` |
+| `Random` | no highlight, no resource type — a template, not a deposit |
+| `Mission_STYX_D_Research2` | mission deposit with its own purpose-built device |
+| `Cobalt` | **unfinished game content** — see below |
 
 Uranium already has a dedicated tool in the game, the **Uranium Locator**.
+
+### Cobalt is unfinished, and it shows
+
+Cobalt *looks* ready: `D_OreDeposit` has a `Cobalt` row, `D_Highlightable` has
+"Deep Mining Ore Deposit: Cobalt", and `D_Itemable` even has `Item_Cobalt_Ore`
+named "Cobalt Ore". But the chain breaks in the middle:
+`D_ItemTemplate.Cobalt_Ore` points at a row `Cobalt_Ore` in `D_ItemsStatic`
+**that does not exist**. No static row, no item, no name — the scanner lists an
+empty entry. No recipe anywhere in the game uses cobalt either, and it occurs
+in no region as a vein.
+
+v0.2.0 of this mod shipped cobalt and produced exactly that blank line.
+`tools/pruefe-zeilen.py` now walks the whole naming chain and fails on it, so
+the next unlock candidate gets caught here rather than in-game.
 
 ## What it does not do
 
@@ -50,14 +67,33 @@ Uranium already has a dedicated tool in the game, the **Uranium Locator**.
   deposits — the things you place a Deep Mining Drill on. Ruby also occurs as
   voxel veins you break with a tier 2 pickaxe (`Ruby_Ore_Normal`,
   `Ruby_Ore_Dense`); the ore scanner never showed those and still doesn't.
-- **It does not create deposits.** Ruby is placed in **arctic** regions of
-  Elysium and Arkadia, including their ridges and caves. On a prospect without
-  arctic terrain there is nothing to find, and the same goes for wherever the
-  map does or does not place lithium and cobalt.
+- **It does not create deposits.** Nothing here adds ore to a map; it only
+  stops the scanner from hiding what is there. See *Where to look* below — on
+  Olympus, for instance, neither resource exists at all.
 - **It is not a separate ruby-only locator.** The Uranium Locator's behaviour
   lives in a Blueprint class (`BP_ActionableBehaviour_RadiationTracker_C`) that
   is wired to uranium; a data mod cannot retarget it. A dedicated ruby locator
   would need a UE4SS script.
+
+## Where to look
+
+Counted out of `D_VoxelDistributionRegion` — this is the **vein** distribution,
+which is the best available hint at where the map puts these resources:
+
+| | Richest spots |
+|---|---|
+| **Ruby** | Elysium arctic ridges 7.1 %, Elysium and Arkadia arctic caves 3.4 % (dense), arctic surface 1.5 % |
+| **Lithium** | Elysium geothermal pools 22.2 % (dense), desert and geothermal caves 7.0 % (dense), desert/geothermal surface 2.2–5.3 % |
+
+Of the four open worlds — Olympus, Styx, Prometheus, Elysium — only **Elysium**
+has either resource. Olympus runs on the game's six unprefixed regions, and all
+six carry nothing but oxite, silica, sulfur, salt, coal above ground and iron,
+copper, coal, platinum, titanium, gold, bauxite below. Prometheus has arctic
+terrain but no ruby in any of its six arctic regions. The Arkadia regions exist
+in the data but there is no Arkadia prospect to play.
+
+So on an Olympus save this mod changes nothing visible — there is nothing to
+show.
 
 ## Requirements
 
@@ -103,22 +139,24 @@ python3 tools/build-exmodz.py
 
 `erzeuge-zeilen.py` copies the row out of the game's table and changes exactly
 one field; `pruefe-zeilen.py` fails if anything else differs, if a field the
-game has went missing, or if a referenced row no longer resolves. Run both
+game has went missing, if a referenced row no longer resolves, or if the
+deposit has no displayable name (which is what produced the blank cobalt entry
+in v0.2.0). Run both
 after an Icarus update rather than editing `src/data/rows.json` by hand.
 
 ## Good to know
 
-- Ruby, lithium and cobalt nodes all reuse the **salt** node materials in the
-  world (`M_DeepMiningOreDeposit_Salt_*`), so they look like salt deposits until
-  the scanner labels them. That is the game's own asset choice, not something
+- Ruby and lithium nodes both reuse the **salt** node materials in the world
+  (`M_DeepMiningOreDeposit_Salt_*`), so they look like salt deposits until the
+  scanner labels them. That is the game's own asset choice, not something
   this mod changes — and it is a good reason to use the scanner rather than
   trust your eyes.
 - This mod **overwrites** a game row rather than adding one. It therefore
   conflicts with any other mod that touches `World/D_OreDeposit` — with merged
   paks, the one that merges last wins.
 - The game's ruby deposit has no `MiningTimeSeconds`, so it falls back to the
-  table default of 60 seconds; lithium and cobalt take 40. Left as is on
-  purpose — this mod changes visibility, not balance.
+  table default of 60 seconds; lithium takes 40. Left as is on purpose — this
+  mod changes visibility, not balance.
 
 ## Credits
 
