@@ -1,0 +1,9 @@
+# Gebaute Bündel
+dist/
+*.EXMODZ
+
+# Spiel-abgeleitetes Material gehört nicht ins Repo: es ist aus einem
+# kommerziellen Spiel erzeugt (CXX-Header-Dump, data.pak-Auszüge).
+reference/
+*.hpp
+*.pak

@@ -1,0 +1,37 @@
+{
+  "_hinweis": [
+    "ERZEUGT von tools/erzeuge-zeilen.py — nicht von Hand aendern.",
+    "",
+    "Jede Zeile ist die Spielzeile aus World/D_OreDeposit, Feld fuer Feld",
+    "uebernommen, mit genau einer Abweichung: ScannerBlacklist steht auf",
+    "false. Damit zeigt der Erz-Scanner des Spiels das Vorkommen so an wie",
+    "Eisen oder Kupfer.",
+    "",
+    "Diese Mod UEBERSCHREIBT damit bewusst Spielzeilen. Das ist der ganze",
+    "Zweck; tools/pruefe-zeilen.py haelt fest, dass sonst nichts abweicht."
+  ],
+  "World-D_OreDeposit": [
+    {
+      "Name": "Ruby",
+      "ResourceType": {
+        "RowName": "Ruby_Ore"
+      },
+      "HighlightableRow": {
+        "RowName": "Deep_Mining_Ore_Deposit_Ruby"
+      },
+      "RVTNodeMaterial_CF": "/Game/ASS/ENV/LND/DeepMiningOreDeposit/M_RVT_CF_DeepMiningOreDeposit_Salt_Node.M_RVT_CF_DeepMiningOreDeposit_Salt_Node",
+      "RVTNodeMaterial_DC": "/Game/ASS/ENV/LND/DeepMiningOreDeposit/M_RVT_DC_DeepMiningOreDeposit_Salt_Node.M_RVT_DC_DeepMiningOreDeposit_Salt_Node",
+      "NodeMaterial_CF": "/Game/ASS/ENV/LND/DeepMiningOreDeposit/M_CF_DeepMiningOreDeposit_Salt_Node.M_CF_DeepMiningOreDeposit_Salt_Node",
+      "NodeMaterial_DC": "/Game/ASS/ENV/LND/DeepMiningOreDeposit/M_DC_DeepMiningOreDeposit_Salt_Node.M_DC_DeepMiningOreDeposit_Salt_Node",
+      "RockMaterial": "/Game/ASS/ENV/LND/DeepMiningOreDeposit/M_DeepMiningOreDeposit_Salt_Rocks.M_DeepMiningOreDeposit_Salt_Rocks",
+      "MinOreAvailable": -1,
+      "MaxOreAvailable": -1,
+      "ScannerBlacklist": false,
+      "Metadata": {
+        "RequiredFeatureLevel": {
+          "RowName": "DangerousHorizons"
+        }
+      }
+    }
+  ]
+}
