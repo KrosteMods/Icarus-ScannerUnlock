@@ -4,9 +4,9 @@ Hinweise für Claude Code (claude.ai/code) bei Arbeit an diesem Repo.
 
 ## Grundlagen
 
-- **Was:** Datentabellen-Mod für Icarus, die Rubin-Vorkommen vom Erz-Scanner
-  anzeigen lässt. Kein neues Item, kein Skript, kein UE4SS — ein Feld in einer
-  Spielzeile.
+- **Was:** Datentabellen-Mod für Icarus, die Rubin-, Lithium- und
+  Cobalt-Vorkommen vom Erz-Scanner anzeigen lässt. Kein neues Item, kein
+  Skript, kein UE4SS — ein Feld in drei Spielzeilen.
 - **Repo:** `github.com/KrosteMods/Icarus-ScannerUnlock`. Mods gehören in die
   KrosteMods-Org, nicht nach KroModIx.
 - **Auslieferung:** `.EXMODZ` als Release-Datei. Das ist ein ZIP mit
@@ -47,6 +47,45 @@ Gemessen an den Spieldaten, nicht geraten:
   `BP_ActionableBehaviour_RadiationTracker_C`. Das Verhalten steckt in einer
   Blueprint-Klasse, fest auf Uran. Ein neues Item könnte nur auf
   `Scanner_DeepOre` zeigen und wäre damit ein zweiter Erz-Scanner.
+
+### Warum nur drei der acht gesperrten Zeilen (v0.2.0)
+
+Lars: „die anderen auch". Nachgemessen, bevor gebaut wurde — und die Messung
+hat die Hälfte der Liste aussortiert. Der Scanner benennt ein Vorkommen über
+`HighlightableRow`. In `D_Highlightable` gibt es **22** Zeilen
+`Deep_Mining_Ore_Deposit_*`, darunter Ruby, Lithium und Cobalt. Genau **vier**
+der acht gesperrten Vorkommen haben gar keine eigene Hervorhebung: `Random`,
+`Exotic`, `Exotic_Red_Raw`, `Exotic_Raw_Uranium`. Ohne Hervorhebung hat der
+Scanner nichts zu benennen; die Sperre dort zu lösen ist voraussichtlich
+wirkungslos. Dazu:
+
+- `Exotic` trägt `Metadata.bIsDeprecated: true` — eine abgelegte Zeile.
+- `Random` ist eine Vorlage, kein echtes Vorkommen.
+- `Mission_STYX_D_Research2` hat ein eigenes Gerät im Spiel („Monitoring
+  Device").
+- Uran hat mit dem Uran-Lokalisator schon ein eigenes Werkzeug.
+
+Geliefert werden deshalb Ruby, Lithium, Cobalt — die drei, die durchgehend
+vorbereitet und nur gesperrt sind. **Die Lehre:** „alle vom selben Typ"
+freizuschalten klingt wie dieselbe Arbeit, ist aber eine Massenänderung nach
+Strukturmerkmal. Erst auflisten, was das Muster trifft, dann auf die weisse
+Liste umstellen.
+
+Nebenbei aufgefallen: `Deep_Mining_Ore_Deposit_Lead` und `_Abyssal_Oxite`
+existieren als Hervorhebung, ohne dass es ein passendes Vorkommen gibt — Reste,
+für diese Mod ohne Bedeutung.
+
+### Die beiden Scanner des Spiels
+
+- **Deep Mining Ore Scanner** (`Scanner_DeepOre`): Rezept `Deep_Ore_Scanner` an
+  Fabricator und Manufacturer, 10 Steel_Ingot + 4 Electronics + 16 Steel_Screw
+  + 30 Copper_Wire, 10.000 mJ. Zeigt, was in der Nähe liegt.
+- **Advanced Deep Mining Ore Scanner** (`Meta_Scanner_DeepOre`): Workshop, 500
+  Credits Forschung, 250 Replikation, Verhalten `Scanner_DeepOre_Advanced`. Die
+  Beschreibung sagt „can be programmed to locate **specific** deep ore
+  deposits" — das ist der, mit dem man gezielt nach Rubin sucht.
+
+Beide hängen am selben `D_OreDeposit` und damit am selben Feld.
 
 **Was davon Hypothese ist:** dass der Scanner das Feld tatsächlich ausliest.
 Das Verhalten liegt in `BP_ActionableBehaviour_Scanner_DeepOre_C` und ist von

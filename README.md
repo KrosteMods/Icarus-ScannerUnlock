@@ -1,6 +1,7 @@
 # Ore Scanner Unlock — an Icarus mod
 
-Makes **ruby** deposits show up on the ore scanner you already craft.
+Makes **ruby**, **lithium** and **cobalt** deposits show up on the ore scanner
+you already craft.
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20me%20a%20coffee-ffdd00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/kroste)
 
@@ -8,10 +9,11 @@ No new items, no scripts, no UE4SS. One field in one game row.
 
 ## How it works
 
-Ruby is already a complete deep mining ore deposit in Icarus. `D_OreDeposit`
-has a `Ruby` row with its own node materials, its own mining setup and its own
-highlight — the game even ships the label **"Deep Mining Ore Deposit: Ruby"**.
-The only thing hiding it from the scanner is one field in that row:
+Ruby, lithium and cobalt are already complete deep mining ore deposits in
+Icarus. `D_OreDeposit` has a row for each, with its own node materials, its own
+mining time and its own highlight — the game even ships the labels **"Deep
+Mining Ore Deposit: Ruby"**, **"… Lithium"** and **"… Cobalt"**. The only thing
+hiding them from the scanner is one field in those rows:
 
 ```json
 "ScannerBlacklist": true
@@ -24,9 +26,23 @@ coal, sulfur, aluminium, titanium, platinum, clay, scoria, obsidian, oxite,
 salt, stone, limestone, frozen wood, supercooled ice — do not, and the scanner
 shows every one of them.
 
-This mod sets that one field to `false` for ruby. Nothing else changes: the row
-is read out of the game's own table field by field, so node materials, mining
-time and highlight stay exactly as the game has them.
+This mod sets that one field to `false` for the three. Nothing else changes:
+each row is read out of the game's own table field by field, so node materials,
+mining time and highlight stay exactly as the game has them.
+
+### Why only three of the eight
+
+The scanner names a deposit through its `HighlightableRow`. Measured against
+`D_Highlightable`: exactly **four** of the eight blacklisted rows have no
+highlight of their own — `Random`, `Exotic`, `Exotic_Red_Raw` and
+`Exotic_Raw_Uranium`. Without one there is nothing for the scanner to label, so
+lifting their flag is not expected to achieve anything. On top of that,
+`Exotic` is marked `bIsDeprecated` in the game data, `Random` is a template
+rather than a real deposit, and the mission deposit has its own purpose-built
+device. Ruby, lithium and cobalt are prepared end to end and only blacklisted —
+those are the three worth unlocking.
+
+Uranium already has a dedicated tool in the game, the **Uranium Locator**.
 
 ## What it does not do
 
@@ -36,7 +52,8 @@ time and highlight stay exactly as the game has them.
   `Ruby_Ore_Dense`); the ore scanner never showed those and still doesn't.
 - **It does not create deposits.** Ruby is placed in **arctic** regions of
   Elysium and Arkadia, including their ridges and caves. On a prospect without
-  arctic terrain there is nothing to find.
+  arctic terrain there is nothing to find, and the same goes for wherever the
+  map does or does not place lithium and cobalt.
 - **It is not a separate ruby-only locator.** The Uranium Locator's behaviour
   lives in a Blueprint class (`BP_ActionableBehaviour_RadiationTracker_C`) that
   is wired to uranium; a data mod cannot retarget it. A dedicated ruby locator
@@ -44,10 +61,16 @@ time and highlight stay exactly as the game has them.
 
 ## Requirements
 
-- **Icarus** with the **Dangerous Horizons** content — the ruby deposit row is
-  gated behind that feature level. Tested against Icarus 3.0.30.
-- An **ore scanner** in hand: either the crafted `Scanner_DeepOre` or the
-  workshop `Meta_Scanner_DeepOre`. Both use the same deposit list.
+- **Icarus** with the **Dangerous Horizons** content — all three deposit rows
+  are gated behind that feature level. Tested against Icarus 3.0.30.
+- An **ore scanner** in hand. Two exist and both read the same deposit list:
+  - **Deep Mining Ore Scanner** — crafted at a Fabricator or Manufacturer from
+    10 Steel Ingot, 4 Electronics, 16 Steel Screw, 30 Copper Wire. Shows
+    whatever deposits are nearby.
+  - **Advanced Deep Mining Ore Scanner** — a workshop item (500 credits to
+    research, 250 to replicate). The game describes it as programmable for a
+    *specific* deposit type, so this is the one to use if you want to hunt ruby
+    alone rather than every deposit at once.
 - A mod manager that can **apply/deploy** `.EXMODZ` data mods, so a merged pak
   ends up in `Icarus/Content/Paks/mods`. Importing alone is not enough.
   On Linux: [lmm](https://github.com/DonovanMods/linux-mod-manager)
@@ -67,13 +90,13 @@ Multiplayer: the scanner reads world data, so **the host** needs the mod.
 Rebuild the merged pak after every Icarus update (`lmm verify --game icarus
 --fix`), otherwise the mod sits on top of the previous patch's tables.
 
-## Unlocking more than ruby
+## Changing the set
 
-The flag is the same for lithium, cobalt and uranium. Regenerate with the
-deposits you want and rebuild:
+The flag is the same for every deposit. Regenerate with the ones you want and
+rebuild:
 
 ```bash
-python3 tools/erzeuge-zeilen.py <folder-with-extracted-game-tables> Ruby,Lithium,Cobalt
+python3 tools/erzeuge-zeilen.py <folder-with-extracted-game-tables> Ruby,Lithium
 python3 tools/pruefe-zeilen.py <folder-with-extracted-game-tables>
 python3 tools/build-exmodz.py
 ```
@@ -85,15 +108,17 @@ after an Icarus update rather than editing `src/data/rows.json` by hand.
 
 ## Good to know
 
-- Ruby nodes reuse the **salt** node materials in the world
-  (`M_DeepMiningOreDeposit_Salt_*`), so a ruby deposit looks like a salt one
-  until the scanner labels it. That is the game's own asset choice, not
-  something this mod changes.
+- Ruby, lithium and cobalt nodes all reuse the **salt** node materials in the
+  world (`M_DeepMiningOreDeposit_Salt_*`), so they look like salt deposits until
+  the scanner labels them. That is the game's own asset choice, not something
+  this mod changes — and it is a good reason to use the scanner rather than
+  trust your eyes.
 - This mod **overwrites** a game row rather than adding one. It therefore
   conflicts with any other mod that touches `World/D_OreDeposit` — with merged
   paks, the one that merges last wins.
 - The game's ruby deposit has no `MiningTimeSeconds`, so it falls back to the
-  table default of 60 seconds. Left as is on purpose.
+  table default of 60 seconds; lithium and cobalt take 40. Left as is on
+  purpose — this mod changes visibility, not balance.
 
 ## Credits
 
